@@ -5,6 +5,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install
 
+RUN npx playwright install --with-deps
+
 COPY . .
 
 RUN npm run build
