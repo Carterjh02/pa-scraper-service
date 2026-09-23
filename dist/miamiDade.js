@@ -18,12 +18,26 @@ export async function extractMiamiDadeAssets(page, address) {
         throw new Error("Miami-Dade: No folio link found");
     await folioLink.click();
     console.log("🟦 [MD] Navigating to details page…");
-    await page.waitForTimeout(8000);
-    const html = (await page.evaluate(() => document.documentElement.outerHTML));
+    // Miami-Dade SPA hydration
+    await page.waitForNavigation({ waitUntil: "networkidle" }).catch(() => { });
+    await page.waitForTimeout(3000);
+    // Extract HTML
+    const html = await page.evaluate(() => document.documentElement.outerHTML);
     const screenshot = await page.screenshot({ fullPage: true });
+    // Validate details page
+    if (!html || html.length < 50000) {
+        console.log("❌ [MD] Details page HTML too small — page not fully loaded.");
+        throw new Error("Miami-Dade: Details page incomplete");
+    }
     console.log("🟦 [MD] Details page loaded, HTML size:", html.length);
-    const folioMatch = html.match(/\b(\d{2}-\d{4}-\d{3}-\d{4})\b/);
+    // Extract folio
+    const folioMatch = html.match(/\b(\d{2}-\d{4}-\d{3}-\d{4})\b/) ??
+        html.match(/Folio:\s*(\d{12})/i);
     const folio = folioMatch ? folioMatch[1] : null;
+    if (!folio) {
+        console.log("❌ [MD] Folio not found on details page.");
+        throw new Error("Miami-Dade: Folio missing on details page");
+    }
     let sketchBuffer;
     if (folio) {
         const numericFolio = folio.replace(/-/g, "");
@@ -31,12 +45,35 @@ export async function extractMiamiDadeAssets(page, address) {
         console.log("🟦 [MD] Navigating to sketch URL:", sketchUrl);
         try {
             await page.goto(sketchUrl, { waitUntil: "networkidle" });
-            await page.waitForSelector("img, canvas", { timeout: 15000 });
-            const sketchEl = await page.$("img, canvas");
-            if (sketchEl) {
-                const buf = await sketchEl.screenshot();
-                sketchBuffer = new Uint8Array(buf);
-                console.log("🟩 [MD] Sketch captured");
+            // Find the traverse.dll image element
+            const traverseImg = await page.$("#ctl00_ContentPlaceHolder1_imgTraverse");
+            if (traverseImg) {
+                const src = await traverseImg.getAttribute("src");
+                if (src) {
+                    // Build full URL
+                    const fullUrl = `https://apps.miamidadepa.gov${src}`;
+                    try {
+                        console.log("🟦 [MD] Downloading sketch directly:", fullUrl);
+                        const response = await page.request.get(fullUrl);
+                        if (response.ok()) {
+                            const buf = await response.body();
+                            sketchBuffer = new Uint8Array(buf);
+                            console.log("🟩 [MD] Sketch image downloaded directly.");
+                        }
+                        else {
+                            console.log("⚠️ [MD] Sketch request failed:", response.status());
+                        }
+                    }
+                    catch (err) {
+                        console.error("❌ [MD] Sketch direct download failed:", err);
+                    }
+                }
+                else {
+                    console.log("⚠️ [MD] traverse image src not found.");
+                }
+            }
+            else {
+                console.log("⚠️ [MD] traverse image element not found.");
             }
         }
         catch (err) {

@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------
-   PALM BEACH — NODE VERSION
+   PALM BEACH — CLASSIC LOGIC (MATCHES OLD NEXT.JS SCRAPER)
 --------------------------------------------------------- */
 function normalizePalmBeachAddress(address) {
     return address
@@ -18,68 +18,35 @@ function normalizePalmBeachAddress(address) {
 }
 export async function extractPalmBeachAssets(page, address) {
     const normalized = normalizePalmBeachAddress(address);
-    console.log("🟦 [PB] Normalized address:", normalized);
-    const searchUrl = "https://pbcpao.gov/index.htm";
-    console.log("🟦 [PB] Navigating to entry page…", searchUrl);
-    await page.goto(searchUrl, { waitUntil: "networkidle" });
-    const initialHtml = await page.content();
-    console.log("🟦 [PB] After goto URL:", page.url());
-    console.log("🟦 [PB] Initial HTML size:", initialHtml.length);
-    console.log("🟦 [PB] Initial HTML preview:", initialHtml.slice(0, 300));
-    console.log("🟦 [PB] Waiting for #realsrchVal (presence only)...");
-    const foundSearchInput = await page
-        .waitForFunction(`!!document.querySelector('#realsrchVal')`, {
-        timeout: 30000,
-    })
-        .catch(async (err) => {
-        const failHtml = await page.content();
-        console.log("❌ [PB] URL at failure:", page.url());
-        console.log("❌ [PB] HTML size at failure:", failHtml.length);
-        console.log("❌ [PB] HTML preview at failure:", failHtml.slice(0, 300));
-        console.log("❌ [PB] Failed waiting for #realsrchVal");
-        throw err;
+    /* ---------------------------------------------------------
+       1. LOAD SEARCH PAGE
+    --------------------------------------------------------- */
+    await page.goto("https://pbcpao.gov/index.htm", {
+        waitUntil: "networkidle",
     });
-    if (!foundSearchInput) {
-        const failHtml = await page.content();
-        console.log("❌ [PB] #realsrchVal not found, URL:", page.url());
-        console.log("❌ [PB] HTML size:", failHtml.length);
-        console.log("❌ [PB] HTML preview:", failHtml.slice(0, 300));
-        throw new Error("Palm Beach: #realsrchVal not found");
-    }
-    console.log("🟩 [PB] #realsrchVal found, filling search value…");
+    await page.waitForSelector("#realsrchVal", { timeout: 15000 });
     await page.fill("#realsrchVal", normalized);
-    console.log("🟦 [PB] Submitting search via Enter…");
     await Promise.all([
         page.waitForNavigation({ waitUntil: "networkidle" }),
         page.keyboard.press("Enter"),
     ]);
-    console.log("🟦 [PB] After search URL:", page.url());
-    const postSearchHtml = await page.content();
-    console.log("🟦 [PB] Post-search HTML size:", postSearchHtml.length);
-    console.log("🟦 [PB] Post-search HTML preview:", postSearchHtml.slice(0, 300));
+    /* ---------------------------------------------------------
+       2. TABLE OR DIRECT DETAILS?
+    --------------------------------------------------------- */
     const tableExists = await page.$("#searchGrid");
     let parcelId = null;
     if (!tableExists) {
-        console.log("🟦 [PB] #searchGrid not found, checking details page…");
+        // Direct details page
         const detailsExists = await page.$("#MainContent_lblLocation");
         if (detailsExists) {
-            console.log("🟩 [PB] Already on details page.");
-            const html = (await page.evaluate(`document.documentElement.outerHTML`));
+            const html = await page.content();
             const screenshot = await page.screenshot({ fullPage: true });
+            // Sketch extraction from inline <img>
             let sketchBuffer;
-            try {
-                const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
-                if (sketchElement) {
-                    const buf = await sketchElement.screenshot();
-                    sketchBuffer = new Uint8Array(buf);
-                    console.log("🟩 [PB] Sketch image captured (direct details page).");
-                }
-                else {
-                    console.log("⚠️ [PB] Sketch element not found (direct details page).");
-                }
-            }
-            catch (err) {
-                console.error("❌ [PB] Sketch capture failed (direct page):", err);
+            const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
+            if (sketchElement) {
+                const buf = await sketchElement.screenshot();
+                sketchBuffer = new Uint8Array(buf);
             }
             return {
                 html,
@@ -88,67 +55,71 @@ export async function extractPalmBeachAssets(page, address) {
                 parcelPhotoBuffer: undefined,
             };
         }
-        console.log("❌ [PB] Neither #searchGrid nor details page found.");
         throw new Error("Palm Beach: searchGrid table not found");
     }
-    console.log("🟩 [PB] #searchGrid found, waiting for rows…");
-    await page.waitForFunction(`(() => {
-      const table = document.querySelector('#searchGrid');
-      if (!table) return false;
-      const rows = table.querySelectorAll('tbody tr');
-      return rows && rows.length > 0;
-    })()`, { timeout: 45000 });
-    const rows = await page.$$("#searchGrid tbody tr");
-    console.log("🟦 [PB] Row count:", rows.length);
-    for (const row of rows) {
-        const locationCell = await row.$("td:nth-child(3)");
-        const locationText = ((await locationCell?.innerText())?.trim().toUpperCase() ??
-            "");
-        if (locationText.includes(normalized.split(" ")[0])) {
-            const parcelCell = await row.$("td:nth-child(5)");
-            parcelId = (await parcelCell?.innerText())?.trim() ?? null;
-            break;
+    /* ---------------------------------------------------------
+    3. TABLE EXISTS → EXACT ADDRESS MATCH WITH PAGINATION
+  --------------------------------------------------------- */
+    await page.waitForFunction(() => {
+        const table = document.querySelector("#searchGrid");
+        return table && table.querySelectorAll("tbody tr").length > 0;
+    }, { timeout: 30000 });
+    async function findParcelAcrossPages() {
+        let pageIndex = 1;
+        while (true) {
+            console.log(`🟦 [PB] Checking page ${pageIndex}…`);
+            const rows = await page.$$("#searchGrid tbody tr");
+            console.log(`🟦 [PB] Row count: ${rows.length}`);
+            for (const row of rows) {
+                const locationCell = await row.$("td:nth-child(3)");
+                const locationText = (await locationCell?.innerText())?.trim().toUpperCase() ?? "";
+                console.log("🟦 [PB] Row address:", locationText);
+                const normalizedPrefix = normalized.split(" ").slice(0, 2).join(" ");
+                if (locationText.includes(normalizedPrefix)) {
+                    console.log("🟩 [PB] MATCH FOUND:", locationText);
+                    const parcelCell = await row.$("td:nth-child(5)");
+                    const parcelText = (await parcelCell?.innerText())?.trim() ?? null;
+                    console.log("🟩 [PB] Extracted parcelId:", parcelText);
+                    return parcelText;
+                }
+            }
+            // next‑page handling
+            const nextButton = await page.$("a.paginate_button.next:not(.disabled)");
+            if (!nextButton) {
+                console.log("❌ [PB] No more pages.");
+                return null;
+            }
+            console.log("🟦 [PB] Next page clicked…");
+            await nextButton.click();
+            await page.waitForTimeout(1500);
+            pageIndex++;
         }
     }
-    if (!parcelId && rows.length > 0) {
-        console.log("🟦 [PB] No exact match — selecting first row.");
-        await rows[0].click();
-        await page.waitForTimeout(3000);
-        const parcelCell = await page.$("#MainContent_lblPCN");
-        parcelId = (await parcelCell?.innerText())?.trim() ?? null;
-    }
+    parcelId = await findParcelAcrossPages();
     if (!parcelId) {
-        const html = (await page.evaluate(`document.documentElement.outerHTML`));
-        console.log("❌ [PB] No matching row found.");
-        console.log("❌ [PB] HTML size at no-match:", html.length);
-        console.log("❌ [PB] HTML preview at no-match:", html.slice(0, 300));
-        throw new Error("Palm Beach: No matching row found");
+        console.log("❌ [PB] No matching address found after pagination.");
+        throw new Error("Palm Beach: No matching address found after pagination");
     }
+    /* ---------------------------------------------------------
+       4. LOAD DETAILS PAGE
+    --------------------------------------------------------- */
     const detailsUrl = `https://pbcpao.gov/Property/Details?parcelId=${parcelId}`;
     console.log("🟦 [PB] Navigating to details page:", detailsUrl);
     await page.goto(detailsUrl, { waitUntil: "networkidle" });
-    await page.waitForSelector("#MainContent_lblLocation", {
-        timeout: 45000,
-    });
-    const html = (await page.evaluate(`document.documentElement.outerHTML`));
+    console.log("🟦 [PB] After navigation URL:", page.url());
+    const html = await page.content();
     const screenshot = await page.screenshot({ fullPage: true });
-    console.log("🟦 [PB] Details page URL:", page.url());
-    console.log("🟦 [PB] Details HTML size:", html.length);
-    console.log("🟦 [PB] Details HTML preview:", html.slice(0, 300));
+    console.log("🟦 [PB] Details HTML preview:", html.slice(0, 500));
+    await page.waitForSelector("#MainContent_lblLocation", { timeout: 30000 });
+    console.log("🟩 [PB] Details page loaded successfully.");
+    /* ---------------------------------------------------------
+       5. SKETCH EXTRACTION (inline <img>)
+    --------------------------------------------------------- */
     let sketchBuffer;
-    try {
-        const sketchElement = await page.$('img[src*="/Property/GetBuildingSketch"]');
-        if (sketchElement) {
-            const buf = await sketchElement.screenshot();
-            sketchBuffer = new Uint8Array(buf);
-            console.log("🟩 [PB] Sketch image captured from results page.");
-        }
-        else {
-            console.log("⚠️ [PB] Sketch element not found on results page.");
-        }
-    }
-    catch (err) {
-        console.error("❌ [PB] Sketch capture failed (results page):", err);
+    const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
+    if (sketchElement) {
+        const buf = await sketchElement.screenshot();
+        sketchBuffer = new Uint8Array(buf);
     }
     return {
         html,
