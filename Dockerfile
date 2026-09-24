@@ -2,6 +2,8 @@ FROM mcr.microsoft.com/playwright:v1.63.0-jammy
 
 WORKDIR /app
 
+ARG CACHEBUST=1
+
 COPY package.json package-lock.json* ./
 RUN npm install
 
