@@ -34,9 +34,9 @@ export async function extractBrowardAssets(page: Page, address: string) {
     console.log("❌ Broward: No records found.");
     return {
       html,
-      screenshot: new Uint8Array(screenshot),
-      sketchBuffer: undefined,
-      parcelPhotoBuffer: undefined,
+      // screenshot: new Uint8Array(screenshot),
+      // sketchBuffer: undefined,
+      // parcelPhotoBuffer: undefined,
     };
   }
 
@@ -44,9 +44,9 @@ export async function extractBrowardAssets(page: Page, address: string) {
     console.log("❌ Broward: Multiple results returned.");
     return {
       html,
-      screenshot: new Uint8Array(screenshot),
-      sketchBuffer: undefined,
-      parcelPhotoBuffer: undefined,
+      // screenshot: new Uint8Array(screenshot),
+      // sketchBuffer: undefined,
+      // parcelPhotoBuffer: undefined,
     };
   }
 
@@ -62,9 +62,9 @@ export async function extractBrowardAssets(page: Page, address: string) {
     console.log("❌ Broward: Folio not found.");
     return {
       html,
-      screenshot: new Uint8Array(screenshot),
-      sketchBuffer: undefined,
-      parcelPhotoBuffer: undefined,
+      // screenshot: new Uint8Array(screenshot),
+      // sketchBuffer: undefined,
+      // parcelPhotoBuffer: undefined,
     };
   }
 

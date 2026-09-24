@@ -114,9 +114,9 @@ export async function extractSeminoleAssets(page: Page, address: string) {
 
     return {
       html,
-      screenshot: new Uint8Array(screenshot),
-      sketchBuffer: undefined,
-      parcelPhotoBuffer: undefined,
+      // screenshot: new Uint8Array(screenshot),
+      // sketchBuffer: undefined,
+      // parcelPhotoBuffer: undefined,
     };
   }
 
@@ -142,8 +142,8 @@ export async function extractSeminoleAssets(page: Page, address: string) {
     console.log("❌ Seminole: Could not extract parcel ID.");
     return {
       html,
-      screenshot: new Uint8Array(screenshot),
-      sketchBuffer: undefined,
+      // screenshot: new Uint8Array(screenshot),
+      // sketchBuffer: undefined,
       parcelPhotoBuffer: undefined,
     };
   }
