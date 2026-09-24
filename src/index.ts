@@ -42,10 +42,7 @@ app.post("/pa-search", async (req, res) => {
       jobId,
       jobNumber,
       companyCode,
-      html,
-      screenshot,
-      sketchBuffer,
-      parcelPhotoBuffer
+      html
     });
 
   } catch (err: any) {
