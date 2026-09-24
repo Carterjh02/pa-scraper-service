@@ -97,8 +97,8 @@ export async function extractBrowardAssets(page: Page, address: string) {
 
   return {
     html,
-    screenshot: new Uint8Array(screenshot),
-    sketchBuffer,
-    parcelPhotoBuffer: undefined,
+    // screenshot: new Uint8Array(screenshot),
+    // sketchBuffer,
+    // parcelPhotoBuffer: undefined,
   };
 }
