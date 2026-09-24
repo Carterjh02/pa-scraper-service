@@ -15,20 +15,16 @@ app.post("/pa-search", async (req, res) => {
         console.log(`🔎 Running scraper for county: ${county}`);
         const browser = await chromium.launch({ headless: true });
         const page = await browser.newPage();
-        const { html, screenshot, sketchBuffer, parcelPhotoBuffer, finalUrl, selectorFound } = await extractCountyAssets(page, county, address);
+        // NEW PIPELINE: helpers returns ONLY parsed fields
+        const { parsed } = await extractCountyAssets(page, county, address);
         await browser.close();
-        console.log("📡 Final URL:", finalUrl ?? "(unknown)");
-        console.log("📏 Screenshot size:", screenshot ? screenshot.length : 0);
-        console.log("🔎 Selectors found:", selectorFound);
+        // Return ONLY parsed fields — no HTML, no images, no huge payloads
         return res.json({
             county,
             jobId,
             jobNumber,
             companyCode,
-            html,
-            screenshot,
-            sketchBuffer,
-            parcelPhotoBuffer
+            parsed
         });
     }
     catch (err) {
