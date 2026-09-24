@@ -65,7 +65,7 @@ export async function extractPalmBeachAssets(page: Page, address: string) {
         html,
         // screenshot: new Uint8Array(screenshot),
         // sketchBuffer,
-        parcelPhotoBuffer: undefined,
+        // parcelPhotoBuffer: undefined,
       };
     }
 
