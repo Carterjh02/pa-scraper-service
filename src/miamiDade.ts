@@ -41,7 +41,7 @@ export async function extractMiamiDadeAssets(
   
   // Extract HTML
   const html = await page.evaluate(() => document.documentElement.outerHTML);
-  const screenshot = await page.screenshot({ fullPage: true });
+  // const screenshot = await page.screenshot({ fullPage: true });
   
   // Validate details page
   if (!html || html.length < 50000) {

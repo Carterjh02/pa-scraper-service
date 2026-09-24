@@ -110,7 +110,7 @@ export async function extractSeminoleAssets(page: Page, address: string) {
   if (!row) {
     console.log("❌ Seminole: Could not click matching row");
     const html = await page.evaluate(() => document.documentElement.outerHTML);
-    const screenshot = await page.screenshot({ type: "png" });
+    // const screenshot = await page.screenshot({ type: "png" });
 
     return {
       html,
@@ -129,7 +129,7 @@ export async function extractSeminoleAssets(page: Page, address: string) {
   await page.waitForTimeout(5000);
 
   const html = await page.evaluate(() => document.documentElement.outerHTML);
-  const screenshot = await page.screenshot({ type: "png" });
+  // const screenshot = await page.screenshot({ type: "png" });
 
   /* ---------------------------------------------------------
      8. EXTRACT PARCEL ID
@@ -163,11 +163,11 @@ export async function extractSeminoleAssets(page: Page, address: string) {
 
     const sketchHtml = await page.content();
     if (sketchHtml.includes("<img")) {
-      const sketchElement = await page.$("img");
+      /* const sketchElement = await page.$("img");
       if (sketchElement) {
         const buf = await sketchElement.screenshot();
         sketchBuffer = new Uint8Array(buf);
-      }
+      } */
     } else {
       console.log("❌ Seminole: Sketch page did not load correctly.");
     }

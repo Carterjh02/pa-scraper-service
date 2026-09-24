@@ -24,9 +24,6 @@ app.post("/pa-search", async (req, res) => {
 
     const {
       html,
-      screenshot,
-      sketchBuffer,
-      parcelPhotoBuffer,
       finalUrl,
       selectorFound
     } = await extractCountyAssets(page, county, address);
@@ -34,7 +31,7 @@ app.post("/pa-search", async (req, res) => {
     await browser.close();
 
     console.log("📡 Final URL:", finalUrl ?? "(unknown)");
-    console.log("📏 Screenshot size:", screenshot ? screenshot.length : 0);
+    // console.log("📏 Screenshot size:", screenshot ? screenshot.length : 0);
     console.log("🔎 Selectors found:", selectorFound);
 
     return res.json({

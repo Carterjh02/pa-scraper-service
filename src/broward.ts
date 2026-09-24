@@ -24,7 +24,7 @@ export async function extractBrowardAssets(page: Page, address: string) {
   
   // Capture HTML + screenshot
   const html = await page.content();
-  const screenshot = await page.screenshot({ type: "png" });
+  // const screenshot = await page.screenshot({ type: "png" });
 
   /* ---------------------------------------------------------
      1. VALIDATE PAGE TYPE
@@ -82,11 +82,11 @@ export async function extractBrowardAssets(page: Page, address: string) {
     await page.goto(sketchUrl, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("img, canvas", { timeout: 10000 });
 
-    const sketchElement = await page.$("img, canvas");
+    /* const sketchElement = await page.$("img, canvas");
     if (sketchElement) {
       const buf = await sketchElement.screenshot();
       sketchBuffer = new Uint8Array(buf);
-    }
+    } */
   } catch (err) {
     console.error("❌ Broward sketch capture failed:", err);
   }

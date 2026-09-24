@@ -51,15 +51,15 @@ export async function extractPalmBeachAssets(page: Page, address: string) {
 
     if (detailsExists) {
       const html = await page.content();
-      const screenshot = await page.screenshot({ fullPage: true });
+     // const screenshot = await page.screenshot({ fullPage: true });
 
       // Sketch extraction from inline <img>
       let sketchBuffer: Uint8Array | undefined;
-      const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
+      /* const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
       if (sketchElement) {
         const buf = await sketchElement.screenshot();
         sketchBuffer = new Uint8Array(buf);
-      }
+      } */
 
       return {
         html,
@@ -145,7 +145,7 @@ await page.goto(detailsUrl, { waitUntil: "networkidle" });
 console.log("🟦 [PB] After navigation URL:", page.url());
 
 const html = await page.content();
-const screenshot = await page.screenshot({ fullPage: true });
+// const screenshot = await page.screenshot({ fullPage: true });
 
 console.log("🟦 [PB] Details HTML preview:", html.slice(0, 500));
 
@@ -158,11 +158,11 @@ console.log("🟩 [PB] Details page loaded successfully.");
   --------------------------------------------------------- */
   let sketchBuffer: Uint8Array | undefined;
 
-  const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
+  /* const sketchElement = await page.$('img[src*="GetBuildingSketch"]');
   if (sketchElement) {
     const buf = await sketchElement.screenshot();
     sketchBuffer = new Uint8Array(buf);
-  }
+  } */
 
   return {
     html,
