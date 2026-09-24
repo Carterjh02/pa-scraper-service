@@ -7,7 +7,7 @@ RUN npm install
 
 COPY . .
 
-# No TypeScript build step — dist is already JS
+RUN npm run build
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV NODE_OPTIONS=--max-old-space-size=4096
@@ -15,5 +15,4 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN mkdir -p /dev/shm && chmod 777 /dev/shm
 
 EXPOSE 3000
-
 CMD ["node", "dist/index.js"]
