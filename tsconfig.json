@@ -11,6 +11,7 @@
     "types": ["node"],
     "ignoreDeprecations": "5.0"
   },
+  "include": ["src/**/*"],
   "ts-node": {
     "transpileOnly": true,
     "compilerOptions": {
