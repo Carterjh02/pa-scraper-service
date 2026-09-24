@@ -22,27 +22,21 @@ app.post("/pa-search", async (req, res) => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    const {
-      html,
-      finalUrl,
-      selectorFound
-    } = await extractCountyAssets(page, county, address);
+    // NEW PIPELINE: helpers returns ONLY parsed fields
+    const { parsed } = await extractCountyAssets(page, county, address);
 
     await browser.close();
 
-    console.log("📡 Final URL:", finalUrl ?? "(unknown)");
-    // console.log("📏 Screenshot size:", screenshot ? screenshot.length : 0);
-    console.log("🔎 Selectors found:", selectorFound);
-
+    // Return ONLY parsed fields — no HTML, no images, no huge payloads
     return res.json({
       county,
       jobId,
       jobNumber,
       companyCode,
-      html
+      parsed
     });
 
-  } catch (err: any) {
+  } catch (err) {
     console.error("🔥 SCRAPER ERROR:", err);
     return res.status(500).json({ error: err.message });
   }

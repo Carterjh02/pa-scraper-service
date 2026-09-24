@@ -111,9 +111,6 @@ export async function extractMiamiDadeAssets(
   }
 
   return {
-    html,
-    // screenshot: new Uint8Array(screenshot as Buffer),
-    // sketchBuffer,
-    // parcelPhotoBuffer: undefined,
+    html
   };
 }
