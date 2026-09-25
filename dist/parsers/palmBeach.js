@@ -1,4 +1,4 @@
-import { normalizeOwnerNames } from "./nameUtils";
+import { normalizeOwnerNames } from "./nameUtils.js";
 /**
  * Parse Palm Beach Property Appraiser HTML using embedded JSON model
  * (Restored legacy logic — identical behavior to deployed version)

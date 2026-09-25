@@ -1,4 +1,4 @@
-import { normalizeOwnerNames } from "./nameUtils";
+import { normalizeOwnerNames } from "./nameUtils.js";
 export function parseBrowardPA(html) {
     const data = {};
     /* ---------------------------------------------------------

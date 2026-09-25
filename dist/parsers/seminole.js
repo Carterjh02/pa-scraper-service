@@ -1,4 +1,4 @@
-import { normalizeOwnerNames } from "./nameUtils";
+import { normalizeOwnerNames } from "./nameUtils.js";
 export function parseSeminolePA(html) {
     const data = {};
     /* ---------------------------------------------------------

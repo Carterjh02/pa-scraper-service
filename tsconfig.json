@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ES2020",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
     "esModuleInterop": true,
     "strict": false,
     "skipLibCheck": true,
     "types": ["node"],
-    "ignoreDeprecations": "5.0"
+    "resolveJsonModule": true
   },
   "include": ["src/**/*"],
   "ts-node": {

@@ -1,5 +1,5 @@
-import type { ParsedPAData } from "../types";
-import { normalizeOwnerNames } from "./nameUtils";
+import type { ParsedPAData } from "../types.js";
+import { normalizeOwnerNames } from "./nameUtils.js";
 
 export function parseBrowardPA(html: string): ParsedPAData {
   const data: ParsedPAData = {};

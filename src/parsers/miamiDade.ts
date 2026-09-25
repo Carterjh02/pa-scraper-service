@@ -1,4 +1,4 @@
-import type { ParsedPAData } from "../types";
+import type { ParsedPAData } from "../types.js";
 
 /* ---------------------------------------------------------
    MIAMI-DADE — CUSTOM NAME NORMALIZER
