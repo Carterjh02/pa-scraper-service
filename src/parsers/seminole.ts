@@ -66,24 +66,35 @@ if (addressBlockMatch) {
   }
 }
 
-  /* ---------------------------------------------------------
-     OWNER NAME(S)
-     Example:
-     <div class="parcel-address">HOWELL, STACEY R</div>
-     (Seminole uses same class for owner + address)
-  --------------------------------------------------------- */
-  // Capture owner block with <br> separators and tenancy text
-  const ownerBlockMatch = html.match(
-    /<div[^>]*>\s*([\s\S]*?)<\/div>/i
-  );
-  
-  if (ownerBlockMatch) {
-    const rawOwnerBlock = ownerBlockMatch[1]
+/* ---------------------------------------------------------
+   OWNER NAME(S)
+   Seminole: owner names are inside <div class="parcel-address">,
+   sometimes with <br> between multiple owners and "Tenancy by Entirety" text.
+--------------------------------------------------------- */
+const ownerMatches = html.matchAll(
+  /<div class="parcel-address">\s*([\s\S]*?)<\/div>/gi
+);
+
+const ownerBlocks = Array.from(ownerMatches, m => m[1]);
+
+if (ownerBlocks.length > 0) {
+  const NON_OWNER_PATTERNS = [
+    "TENANCY BY ENTIRETY",
+    "TENANTS BY ENTIRETY",
+    "TBE",
+    "ET AL",
+    "C/O",
+  ];
+
+  const ownerLines: string[] = [];
+
+  for (const block of ownerBlocks) {
+    const cleanedBlock = block
       .replace(/<!--.*?-->/g, "")
-      .replace(/<span[\s\S]*$/i, "") // remove trailing span/links
+      .replace(/<span[\s\S]*$/i, "") // drop trailing span/links
       .trim();
-  
-    const ownerLines = rawOwnerBlock
+
+    const lines = cleanedBlock
       .split(/<br\s*\/?>/i)
       .map(line =>
         line
@@ -91,12 +102,21 @@ if (addressBlockMatch) {
           .replace(/&amp;/g, "&")
           .trim()
       )
-      .filter(line => line.length > 0);
-  
-    if (ownerLines.length > 0) {
-      data.ownerName = normalizeOwnerNames(ownerLines);
-    }
+      .filter(line => line.length > 0)
+      .filter(
+        line =>
+          !NON_OWNER_PATTERNS.some(p =>
+            line.toUpperCase().includes(p.toUpperCase())
+          )
+      );
+
+    ownerLines.push(...lines);
   }
+
+  if (ownerLines.length > 0) {
+    data.ownerName = normalizeOwnerNames(ownerLines);
+  }
+}
 
   /* ---------------------------------------------------------
   LEGAL DESCRIPTION
