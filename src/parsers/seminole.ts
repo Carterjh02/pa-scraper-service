@@ -79,8 +79,20 @@ if (addressBlockMatch) {
   const ownerCandidates = Array.from(ownerMatches, m => m[1].trim());
 
   // Filter out the address block (contains digits)
-  const owners = ownerCandidates.filter(o => !/\d/.test(o));
-
+  const NON_OWNER_PATTERNS = [
+    "TENANCY BY ENTIRETY",
+    "TENANTS BY ENTIRETY",
+    "TBE",
+    "ET AL",
+    "C/O",
+  ];
+  
+  let owners = ownerCandidates.filter(o => !/\d/.test(o));
+  
+  owners = owners.filter(o =>
+    !NON_OWNER_PATTERNS.some(p => o.includes(p))
+  );
+  
   if (owners.length > 0) {
     data.ownerName = normalizeOwnerNames(owners);
   }
@@ -93,15 +105,17 @@ if (addressBlockMatch) {
   PB 50 PGS 33 & 34</div></td>
 --------------------------------------------------------- */
 const legalMatch = html.match(
-  /<td[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>\s*<\/td>/i
+  /<td[^>]*class="[^"]*e-templatecell[^"]*"[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>/i
 );
 
 if (legalMatch) {
-  data.legalDescription = legalMatch[1]
-    .replace(/<!--.*?-->/g, "") // remove comment nodes
+  const raw = legalMatch[1]
+    .replace(/<!--.*?-->/g, "")
     .replace(/\s+/g, " ")
     .replace(/&amp;/g, "&")
     .trim();
+
+  data.legalDescription = raw;
 }
 
   /* ---------------------------------------------------------
