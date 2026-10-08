@@ -68,31 +68,28 @@ if (addressBlockMatch) {
 
 /* ---------------------------------------------------------
    OWNER NAME(S)
-   Seminole: owner names are inside <div class="parcel-address">,
-   sometimes with <br> between multiple owners and "Tenancy by Entirety".
+   Seminole: row with <b>Owner</b>, names in the next <td>,
+   separated by <br> and followed by "Tenancy by Entirety".
 --------------------------------------------------------- */
-const ownerMatches = html.matchAll(
-  /<div class="parcel-address">\s*([\s\S]*?)<\/div>/gi
+const ownerMatch = html.match(
+  /<td[^>]*>\s*<div><b>Owner<\/b><\/div><\/td>\s*<td[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>/i
 );
-const ownerBlocks = Array.from(ownerMatches, m => m[1]);
 
-const NON_OWNER_PATTERNS = [
-  "TENANCY BY ENTIRETY",
-  "TENANTS BY ENTIRETY",
-  "TBE",
-  "ET AL",
-  "C/O",
-];
-
-let owners: string[] = [];
-
-for (const block of ownerBlocks) {
-  const cleanedBlock = block
+if (ownerMatch) {
+  const rawBlock = ownerMatch[1]
     .replace(/<!--.*?-->/g, "")
     .replace(/<span[\s\S]*$/i, "") // drop trailing span/links
     .trim();
 
-  const lines = cleanedBlock
+  const NON_OWNER_PATTERNS = [
+    "TENANCY BY ENTIRETY",
+    "TENANTS BY ENTIRETY",
+    "TBE",
+    "ET AL",
+    "C/O",
+  ];
+
+  const owners = rawBlock
     .split(/<br\s*\/?>/i)
     .map(line =>
       line
@@ -106,16 +103,12 @@ for (const block of ownerBlocks) {
         !NON_OWNER_PATTERNS.some(p =>
           line.toUpperCase().includes(p.toUpperCase())
         )
-    );
+    )
+    .filter(line => !/\d/.test(line)); // avoid address-like entries
 
-  owners.push(...lines);
-}
-
-// Filter out address-like entries (contain digits)
-owners = owners.filter(o => !/\d/.test(o));
-
-if (owners.length > 0) {
-  data.ownerName = normalizeOwnerNames(owners);
+  if (owners.length > 0) {
+    data.ownerName = normalizeOwnerNames(owners);
+  }
 }
 
   /* ---------------------------------------------------------
