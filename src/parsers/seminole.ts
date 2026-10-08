@@ -69,53 +69,53 @@ if (addressBlockMatch) {
 /* ---------------------------------------------------------
    OWNER NAME(S)
    Seminole: owner names are inside <div class="parcel-address">,
-   sometimes with <br> between multiple owners and "Tenancy by Entirety" text.
+   sometimes with <br> between multiple owners and "Tenancy by Entirety".
 --------------------------------------------------------- */
 const ownerMatches = html.matchAll(
   /<div class="parcel-address">\s*([\s\S]*?)<\/div>/gi
 );
-
 const ownerBlocks = Array.from(ownerMatches, m => m[1]);
 
-if (ownerBlocks.length > 0) {
-  const NON_OWNER_PATTERNS = [
-    "TENANCY BY ENTIRETY",
-    "TENANTS BY ENTIRETY",
-    "TBE",
-    "ET AL",
-    "C/O",
-  ];
+const NON_OWNER_PATTERNS = [
+  "TENANCY BY ENTIRETY",
+  "TENANTS BY ENTIRETY",
+  "TBE",
+  "ET AL",
+  "C/O",
+];
 
-  const ownerLines: string[] = [];
+let owners: string[] = [];
 
-  for (const block of ownerBlocks) {
-    const cleanedBlock = block
-      .replace(/<!--.*?-->/g, "")
-      .replace(/<span[\s\S]*$/i, "") // drop trailing span/links
-      .trim();
+for (const block of ownerBlocks) {
+  const cleanedBlock = block
+    .replace(/<!--.*?-->/g, "")
+    .replace(/<span[\s\S]*$/i, "") // drop trailing span/links
+    .trim();
 
-    const lines = cleanedBlock
-      .split(/<br\s*\/?>/i)
-      .map(line =>
-        line
-          .replace(/-?\s*Tenancy by Entirety/i, "")
-          .replace(/&amp;/g, "&")
-          .trim()
-      )
-      .filter(line => line.length > 0)
-      .filter(
-        line =>
-          !NON_OWNER_PATTERNS.some(p =>
-            line.toUpperCase().includes(p.toUpperCase())
-          )
-      );
+  const lines = cleanedBlock
+    .split(/<br\s*\/?>/i)
+    .map(line =>
+      line
+        .replace(/-?\s*Tenancy by Entirety/i, "")
+        .replace(/&amp;/g, "&")
+        .trim()
+    )
+    .filter(line => line.length > 0)
+    .filter(
+      line =>
+        !NON_OWNER_PATTERNS.some(p =>
+          line.toUpperCase().includes(p.toUpperCase())
+        )
+    );
 
-    ownerLines.push(...lines);
-  }
+  owners.push(...lines);
+}
 
-  if (ownerLines.length > 0) {
-    data.ownerName = normalizeOwnerNames(ownerLines);
-  }
+// Filter out address-like entries (contain digits)
+owners = owners.filter(o => !/\d/.test(o));
+
+if (owners.length > 0) {
+  data.ownerName = normalizeOwnerNames(owners);
 }
 
   /* ---------------------------------------------------------
