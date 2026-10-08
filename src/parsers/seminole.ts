@@ -72,26 +72,30 @@ if (addressBlockMatch) {
      <div class="parcel-address">HOWELL, STACEY R</div>
      (Seminole uses same class for owner + address)
   --------------------------------------------------------- */
-  // Capture mixed-case names, not just uppercase
-  const ownerMatches = html.matchAll(
-    /<div class="parcel-address">\s*([^<]+?)\s*<\/div>/gi
+  // Capture owner block with <br> separators and tenancy text
+  const ownerBlockMatch = html.match(
+    /<div[^>]*>\s*([\s\S]*?)<\/div>/i
   );
-  const ownerCandidates = Array.from(ownerMatches, m => m[1].trim());
   
-  // Filter out the address block (contains digits)
-  const NON_OWNER_PATTERNS = [
-    "TENANCY BY ENTIRETY",
-    "TENANTS BY ENTIRETY",
-    "TBE",
-    "ET AL",
-    "C/O",
-  ];
+  if (ownerBlockMatch) {
+    const rawOwnerBlock = ownerBlockMatch[1]
+      .replace(/<!--.*?-->/g, "")
+      .replace(/<span[\s\S]*$/i, "") // remove trailing span/links
+      .trim();
   
-  let owners = ownerCandidates.filter(o => !/\d/.test(o));
-  owners = owners.filter(o => !NON_OWNER_PATTERNS.some(p => o.toUpperCase().includes(p)));
+    const ownerLines = rawOwnerBlock
+      .split(/<br\s*\/?>/i)
+      .map(line =>
+        line
+          .replace(/-?\s*Tenancy by Entirety/i, "")
+          .replace(/&amp;/g, "&")
+          .trim()
+      )
+      .filter(line => line.length > 0);
   
-  if (owners.length > 0) {
-    data.ownerName = normalizeOwnerNames(owners);
+    if (ownerLines.length > 0) {
+      data.ownerName = normalizeOwnerNames(ownerLines);
+    }
   }
 
   /* ---------------------------------------------------------
@@ -101,9 +105,9 @@ if (addressBlockMatch) {
   HUNTINGTON POINTE PH 2
   PB 50 PGS 33 & 34</div></td>
 --------------------------------------------------------- */
-// Seminole uses multiple e-templatecell columns; legal description is in column index 2
+// Seminole legal description cell is labeled "Legal" in the first column
 const legalMatch = html.match(
-  /<td[^>]*class="[^"]*e-templatecell[^"]*"[^>]*aria-colindex="2"[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>/i
+  /<td[^>]*>\s*<div><b>Legal<\/b><\/div><\/td>\s*<td[^>]*class="[^"]*e-templatecell[^"]*"[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>/i
 );
 
 if (legalMatch) {
