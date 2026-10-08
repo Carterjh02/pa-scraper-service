@@ -72,12 +72,12 @@ if (addressBlockMatch) {
      <div class="parcel-address">HOWELL, STACEY R</div>
      (Seminole uses same class for owner + address)
   --------------------------------------------------------- */
+  // Capture mixed-case names, not just uppercase
   const ownerMatches = html.matchAll(
-    /<div class="parcel-address">\s*([A-Z0-9 ,.&']+)\s*<\/div>/gi
+    /<div class="parcel-address">\s*([^<]+?)\s*<\/div>/gi
   );
-
   const ownerCandidates = Array.from(ownerMatches, m => m[1].trim());
-
+  
   // Filter out the address block (contains digits)
   const NON_OWNER_PATTERNS = [
     "TENANCY BY ENTIRETY",
@@ -88,10 +88,7 @@ if (addressBlockMatch) {
   ];
   
   let owners = ownerCandidates.filter(o => !/\d/.test(o));
-  
-  owners = owners.filter(o =>
-    !NON_OWNER_PATTERNS.some(p => o.includes(p))
-  );
+  owners = owners.filter(o => !NON_OWNER_PATTERNS.some(p => o.toUpperCase().includes(p)));
   
   if (owners.length > 0) {
     data.ownerName = normalizeOwnerNames(owners);
@@ -104,8 +101,9 @@ if (addressBlockMatch) {
   HUNTINGTON POINTE PH 2
   PB 50 PGS 33 & 34</div></td>
 --------------------------------------------------------- */
+// Seminole uses multiple e-templatecell columns; legal description is in column index 2
 const legalMatch = html.match(
-  /<td[^>]*class="[^"]*e-templatecell[^"]*"[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>/i
+  /<td[^>]*class="[^"]*e-templatecell[^"]*"[^>]*aria-colindex="2"[^>]*>\s*<div[^>]*>([\s\S]*?)<\/div>/i
 );
 
 if (legalMatch) {
